@@ -156,8 +156,7 @@ exports.deleteBook = (req, res) => {
       res.end("Opps! error occured while processing the book");
       return;
     };
-    let search;
-    console.log(req.query);
+    let search; 
     for (key in req.query) {
       search=req.query[`${key}`];
     }
@@ -166,14 +165,15 @@ exports.deleteBook = (req, res) => {
       book: books,
       search: search
     };
-    let updatedBook = removeBook(details);
+    let updatedBook =removeBook(details);
     if (updatedBook.length === 0) {
       res.statusCode = 404;
       res.end("Book was not found");
       return;
     }
+    
     //write the updated data back to the file
-    createfs.writeFile("./books.json", JSON.stringify(updatedBook), (err) => {
+    createfs.writeFile("./books.json", updatedBook, (err) => {
       if (err) {
         res.statusCode = 500;
         res.end("There was error while updating your book");

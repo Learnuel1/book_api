@@ -2,6 +2,7 @@
 const { json } = require("express");
 const express = require("express"); 
 const { status, books, deleteBook, addBook, updateBook } = require("./handler");
+const { getSingleBook } = require("./utils");
 const app = express();
   
 app.use(express.json()); 
@@ -33,7 +34,7 @@ app.delete("/books/delete", (req, res, next) => {
   if (!req.query.id && !req.query.title) {
     res.status(404).json({ error: "bookid or/and title is required" });
     return;
-  }
+  }  
   next();
 });
 app.delete("/books/delete", (req, res, next) => {
