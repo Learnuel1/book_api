@@ -23,25 +23,24 @@ exports.getBook = (details) => {
 
 exports. removeBook = (details) => {
   const arr = JSON.parse(details.book);  
-  let found = []; 
-  arr.map((curr, index) => {
-    if (isNaN(details.search)) {
-      if (curr.title.toLowerCase() === details.search.toLowerCase()) {
-        found.push(curr); 
-      arr.splice(index,1);
-      }
-    } else {
-      if (curr.id ===parseInt(details.search)) {
-       found.push(curr); 
-      arr.splice(index,1); 
+  
+    const field = isNaN(details.search) ? details.title : details.id;
+  
+  
+  if (isNaN(details.search)) {
+    const found =arr.filter(element => element.title.toLowerCase() == details.search.toLowerCase());
+    if (found.length === 0) {
+      return found;
     }
-    }
-    
-  });
-  if (found.length === 0) {
-    return [];
+    let search = arr.filter(element => element.title.toLowerCase() !== details.search.toLowerCase());
+    return JSON.stringify( search);
   } else {
-     return arr;
+ const found = arr.filter(element => element.id === parseInt( details.search));
+    if (found.length === 0) {
+      return found;
+    }
+    let search = arr.filter(element => element.id !== parseInt( details.search));
+    return JSON.stringify( search);
   }
   
 };
