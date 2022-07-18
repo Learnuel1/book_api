@@ -1,4 +1,4 @@
-const { getSingleBook,
+ const { getSingleBook,
   getBookTitle,
   getBook,
   updateDetails,
@@ -6,7 +6,8 @@ const { getSingleBook,
 } = require("./utils");
 
 const fs = require("fs").promises;
-const createfs = require("fs");   
+const createfs = require("fs");    
+const { json } = require("express");
 
 exports.status = (req, res) => {
   res.statusCode = 200;
@@ -14,17 +15,15 @@ exports.status = (req, res) => {
    res.end(JSON.stringify(data));
 }
  
-exports.books = async(req, res, params) => {
+exports.books = async(req, res) => {
   try {  
     
     let found;
     const books = await fs.readFile("./books.json");
-    res.writeHead(200, { "Content-Type": "application/json" });
-    let bookid, title;
-    if (params.get("id") && !params.get("title")) {
-      bookid = params.get("id"); 
-         found = getSingleBook(books.toString(), bookid);
-    if(found.length ===0)
+    res.writeHead(200, { "Content-Type": "application/json" }); 
+    if (req.query.id && !req.query.title) { 
+      found = getSingleBook(books.toString(), req.query.id);
+    if(!found)
     { 
       res.statusCode = 404;
         res.end("Book Not Found");
@@ -34,38 +33,36 @@ exports.books = async(req, res, params) => {
      
       return;
     }
-    else if (params.get("title") && !params.get("id")) {
+    else if (req.query.title && !req.query.id) { 
       
-      title = params.get("title")
-      found = getBookTitle(books.toString(), title);
+      found = getBookTitle(books.toString(), req.query.title);
+     
        res.statusCode = 200;
-      if (found.length === 0) {
-        res.statusCode = 404;
-         res.end("Book Not Found");
+      if (!found) {
+        res.status (404).json({msg:"Book Not Found"}); 
       } else {
          res.end(JSON.stringify(found));
       }
       return;
-    } else if (params.get("id") && params.get("title")) {
-       bookid = params.get("id");
-      title = params.get("title");
+    } else if (req.query.id && req.query.title) {
+        
       const details = {
         book: books,
-        title: title,
-        id: bookid
+        title: req.query.title,
+        id: req.query.id
       };
-      found = getBook(details);
+      found = getBook(details); 
        res.statusCode = 200;
-      if (found.length === 0) {
+      if (!found) {
          res.statusCode = 404;
-         res.end("Book Not Found");
+          res.end("Book Not Found"); 
       } else {
+         res.statusCode = 200;
          res.end(JSON.stringify(found));
       }
     } else {
        res.end(books.toString());
     }
- 
    
   } catch (error) {
     console.log(`Reading User Error: ${error.message}`);
@@ -74,14 +71,8 @@ exports.books = async(req, res, params) => {
   }
 }
 
- 
 exports.addBook = (req, res) => {
-  
-  let data = "";
-  req.on("data", (chunk) => {
-    data += chunk;
-  });
-  req.on("end", () => {
+ 
     createfs.readFile("./books.json", (err, books) => {
       if (err) {
         res.statusCode = 500;
@@ -90,10 +81,14 @@ exports.addBook = (req, res) => {
       };
  
       //read all existing books
-      const existingBooks = JSON.parse(books.toString());
+      const existingBooks = JSON.parse(books.toString()); 
       //convert new book to json object
-      const newBook = JSON.parse(data);
-      newBook.id = existingBooks[existingBooks.length-1].id + 1;
+      const newBook = req.body;
+      if (existingBooks.length===0) {
+        newBook.id = 1;
+      } else {
+        newBook.id = existingBooks[existingBooks.length-1].id + 1;
+      } 
       const date = new Date().toISOString();
       newBook.createdAt = date;
       newBook.updatedAt = date;
@@ -111,36 +106,34 @@ exports.addBook = (req, res) => {
         res.end("Book was added successfully");
       });
     });
-  })
 }
 
- 
 exports.updateBook = (req, res) => {
-  let data = "";
-  req.on("data", (chunk) => {
-    data += chunk;
-  });
-  req.on("end", () => {
     createfs.readFile("./books.json", (err, books) => {
       if (err) {
         res.statusCode = 500;
         res.end("Opps! error occured while processing the book");
         return;
       };
-  
-      const newDetails = JSON.parse(data); 
-      const details = {
-        book: books,
-        id: newDetails.id,
-        title: newDetails.title,
-        price: newDetails.price
-      }
-      let updatedBook = updateDetails(details); 
-      if (updatedBook.length === 0) {
+    
+      let details = { 
+        id: req.body.id,
+      }  
+      for (key in req.body) { 
+        if (key !== "id") {
+          details[key] = req.body[`${key}`];
+        }
+        details.updatedAt = new Date().toISOString();
+      } 
+     
+      let updatedBook = JSON.parse( updateDetails( books,req.body.id)); 
+
+      if (updatedBook.length===0) {
          res.statusCode = 200;
         res.end("Book was not found");
         return;
-      }
+      } 
+      updatedBook.push(details);
       //write the updated data back to the file
       createfs.writeFile("./books.json", JSON.stringify(updatedBook), (err) => {
         if (err) {
@@ -152,11 +145,10 @@ exports.updateBook = (req, res) => {
         res.end("Book was updated successfully");
       });
     });
-  })
 }
 
 
-exports.deleteBook = (req, res, params) => {
+exports.deleteBook = (req, res) => {
    
   createfs.readFile("./books.json", (err, books) => {
     if (err) {
@@ -164,30 +156,24 @@ exports.deleteBook = (req, res, params) => {
       res.end("Opps! error occured while processing the book");
       return;
     };
-    let search;
-    if (!params.get("id") && !params.get("title")) {
-      res.statusCode = 404;
-      res.end(`{"error": "bookid is required"}`);
-      return;
-    } else if (params.get("id")) {
-      search = params.get("id");
-    } else {
-       search = params.get("title");
+    let search; 
+    for (key in req.query) {
+      search=req.query[`${key}`];
     }
-      
+       
     const details = {
       book: books,
       search: search
-      
     };
-    let updatedBook = removeBook(details);
+    let updatedBook =removeBook(details);
     if (updatedBook.length === 0) {
       res.statusCode = 404;
       res.end("Book was not found");
       return;
     }
+    
     //write the updated data back to the file
-    createfs.writeFile("./books.json", JSON.stringify(updatedBook), (err) => {
+    createfs.writeFile("./books.json", updatedBook, (err) => {
       if (err) {
         res.statusCode = 500;
         res.end("There was error while updating your book");

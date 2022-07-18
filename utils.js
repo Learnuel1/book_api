@@ -1,80 +1,46 @@
 exports.getSingleBook = (book, id) => {
-  const arr=JSON.parse(book); 
-  let found=[];
-  arr.map((curr) => {
-    if (curr.id === parseInt(id) ) {
-      found.push(curr); 
-    }
-    
-  });
-   return found;
+  const arr=JSON.parse(book);  
+ return  arr.find(element => element.id === parseInt( id)  ); 
+ 
 };
  
-exports.getBookTitle = (book, title) => {
+exports.getBookTitle = (book, title) => { 
   const arr=JSON.parse(book); 
-  let found=[];
-  arr.map((curr) => {
-    if (curr.title.toLowerCase() === title.toLowerCase() ) {
-      found.push(curr); 
-    }
-    
-  });
-   return found;
+  return  arr.find(element => element.title ===   title  ); 
 };
 // get book by id and title
 exports.getBook = (details) => {
   const arr = JSON.parse(details.book);  
-  let found=[];
-  arr.map((curr) => {
-    if (curr.title.toLowerCase() === details.title.toLowerCase() && curr.id === parseInt(details.id)) {
-      found.push(curr); 
-    }
-    
-  });
-   return found;
+   return  arr.find(element => element.title.toLowerCase() === details.title.toLowerCase() &&  element.id === parseInt(details.id)); 
 };
   
-  exports.updateDetails = (details) => {
-  const arr = JSON.parse(details.book);  
-  let found=[];
-  arr.map((curr) => {
-    if (curr.id === parseInt(details.id)) {
-      curr.title = details.title;
-      curr.price = details.price;
-      curr.updatedAt = new Date().toISOString(); 
-      found.push(curr); 
-    }
-    
-  });
-  if (found.length === 0) {
-    return [];
-  } else {
-     return arr;
-  }
-  
+  exports.updateDetails = (books,id) => {
+    const arr = JSON.parse(books);  
+    const filtered = arr.filter(element => element.id !==parseInt( id));
+    return JSON.stringify( filtered);
+   
 };
 
-exports.removeBook = (details) => {
+exports. removeBook = (details) => {
   const arr = JSON.parse(details.book);  
-  let found=[];
-  arr.map((curr, index) => {
-    if (isNaN(details.search)) {
-      if (curr.title.toLowerCase() === details.search.toLowerCase()) {
-        found.push(curr); 
-      arr.splice(index,1);
-      }
-    } else {
-      if (curr.id ===parseInt(details.search)) {
-       found.push(curr); 
-      arr.splice(index,1); 
+  
+    const field = isNaN(details.search) ? details.title : details.id;
+  
+  
+  if (isNaN(details.search)) {
+    const found =arr.filter(element => element.title.toLowerCase() == details.search.toLowerCase());
+    if (found.length === 0) {
+      return found;
     }
-    }
-    
-  });
-  if (found.length === 0) {
-    return [];
+    let search = arr.filter(element => element.title.toLowerCase() !== details.search.toLowerCase());
+    return JSON.stringify( search);
   } else {
-     return arr;
+ const found = arr.filter(element => element.id === parseInt( details.search));
+    if (found.length === 0) {
+      return found;
+    }
+    let search = arr.filter(element => element.id !== parseInt( details.search));
+    return JSON.stringify( search);
   }
   
 };
