@@ -1,8 +1,6 @@
 const express = require("express"); 
 const {connect} = require("mongoose");
 const { status, books, deleteBook, addBook, updateBook } = require("./handler");
-const { getSingleBook } = require("./utils");
-
 const app = express();
   
 app.use(express.json()); 
