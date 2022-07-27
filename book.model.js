@@ -3,11 +3,10 @@ const { Schema, model } = require("mongoose");
 const BookSchema = new Schema({
   title: String,
   author: String,
-  price: Double,
-  createdAt: Date,
-  updatedAt: Date,
-});
+  price: Number,
+  
+},{timestamps: true});
 
-const BookModel = new Model("book", BookSchema);
+const BookModel = model("book", BookSchema);
 
-exports.BookModel;
+module.exports = BookModel;
